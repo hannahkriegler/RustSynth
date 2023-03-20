@@ -1,3 +1,5 @@
+use crate::piano_test::play_piano;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -101,6 +103,12 @@ impl eframe::App for TemplateApp {
                 "https://github.com/emilk/eframe_template/blob/master/",
                 "Source code."
             ));
+
+            ui.add(egui::Slider::new(value, 0.0..=10.0).text("test value"));
+            if ui.button("CLICK ME").clicked() {
+                play_piano();
+            }
+
             egui::warn_if_debug_build(ui);
         });
 
