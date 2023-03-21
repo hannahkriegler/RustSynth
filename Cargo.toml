@@ -15,8 +15,8 @@ eframe = { version = "0.21.0", default-features = false, features = [
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
 
-twang = "0.9.0"
-fon = "*"
+rodio = "0.17.1"
+wasm-bindgen = "0.2.82" 
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }

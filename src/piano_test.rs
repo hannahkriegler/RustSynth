@@ -1,57 +1,34 @@
-//! A Minor on an Electric Piano
+use std::fs::File;
+use std::io::BufReader;
+use std::time::Duration;
+use rodio::{Decoder, OutputStream, Sink};
+use rodio::source::{SineWave, Source};
 
-use fon::chan::Ch16;
-use fon::{Audio, Frame};
-use twang::noise::White;
-use twang::ops::Gain;
-use twang::osc::Sine;
-use twang::Synth;
+pub fn play_test(){
+    // Get a output stream handle to the default physical sound device
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    // Load a sound from a file, using a path relative to Cargo.toml
+    let file = BufReader::new(File::open("piano.wav").unwrap());
+    // Decode that sound file into a source
+    let source = Decoder::new(file).unwrap();
+    // Play the sound directly on the device
+    stream_handle.play_raw(source.convert_samples());
 
-use crate::wav;
-
-/// First ten harmonic volumes of a piano sample (sounds like electric piano).
-const HARMONICS: [f32; 10] = [
-    0.700, 0.243, 0.229, 0.095, 0.139, 0.087, 0.288, 0.199, 0.124, 0.090,
-];
-/// The three pitches in a perfectly tuned A3 minor chord
-const PITCHES: [f32; 3] = [220.0, 220.0 * 32.0 / 27.0, 220.0 * 3.0 / 2.0];
-/// Volume of the piano
-const VOLUME: f32 = 1.0 / 3.0;
-
-// State of the synthesizer.
-#[derive(Default)]
-struct Processors {
-    // White noise generator.
-    white: White,
-    // 10 harmonics for 3 pitches.
-    piano: [[Sine; 10]; 3],
+    // The sound plays in a separate audio thread,
+    // so we need to keep the main thread alive while it's playing.
+    std::thread::sleep(std::time::Duration::from_secs(5));
 }
 
-pub fn play_piano() {
-    // Initialize audio
-    let mut audio = Audio::<Ch16, 2>::with_silence(48_000, 48_000 * 5);
-    // Create audio processors
-    let mut proc = Processors::default();
-    // Adjust phases of harmonics.
-    for pitch in proc.piano.iter_mut() {
-        for harmonic in pitch.iter_mut() {
-            harmonic.shift(proc.white.step());
-        }
-    }
-    // Build synthesis algorithm
-    let mut synth = Synth::new(proc, |proc, mut frame: Frame<_, 2>| {
-        for (s, pitch) in proc.piano.iter_mut().zip(PITCHES.iter()) {
-            for ((i, o), v) in s.iter_mut().enumerate().zip(HARMONICS.iter()) {
-                // Get next sample from oscillator.
-                let sample = o.step(pitch * (i + 1) as f32);
-                // Pan the generated harmonic center
-                frame = frame.pan(Gain.step(sample, (v * VOLUME).into()), 0.0);
-            }
-        }
-        frame
-    });
-    // Synthesize 5 seconds of audio
-    synth.stream(audio.sink());
-    // Write synthesized audio to WAV file
-    wav::write(audio, "piano.wav").expect("Failed to write WAV file");
+pub fn play_sink_test()
+{
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let sink = Sink::try_new(&stream_handle).unwrap();
+
+    // Add a dummy source of the sake of the example.
+    let source = SineWave::new(50.0).take_duration(Duration::from_secs_f32(0.25)).amplify(0.20);
+    sink.append(source);
+
+    // The sound plays in a separate thread. This call will block the current thread until the sink
+    // has finished playing all its queued sounds.
+    sink.sleep_until_end();
 }

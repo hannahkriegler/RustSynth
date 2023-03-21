@@ -2,8 +2,6 @@
 
 mod app;
 mod piano_test;
-pub mod wav;
 pub use app::TemplateApp;
-
-
-//pub use piano_test::play_piano;
+pub use piano_test::play_test;
+pub use piano_test::play_sink_test;

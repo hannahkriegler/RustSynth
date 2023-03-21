@@ -1,4 +1,5 @@
-use crate::piano_test::play_piano;
+use crate::piano_test::play_test;
+use crate::play_sink_test;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -106,7 +107,7 @@ impl eframe::App for TemplateApp {
 
             ui.add(egui::Slider::new(value, 0.0..=10.0).text("test value"));
             if ui.button("CLICK ME").clicked() {
-                play_piano();
+                play_sink_test();
             }
 
             egui::warn_if_debug_build(ui);
